@@ -31,6 +31,7 @@ namespace Overlord_Warden {
 
         };
 
+        SpeechRecognitionEngine recognizer;
         System.Timers.Timer randomEventTimer = new System.Timers.Timer();
         Random random = new Random();
 
@@ -78,7 +79,6 @@ namespace Overlord_Warden {
             if (!File.Exists(rDir)) {
                 File.WriteAllLines(rDir, new string[] {
                     "S|You cannot use your current weapon. Drop them and find another",
-                    "S|You cannot use your current weapon. Drop them and find another",
                     "S|You cannot use any abilities this round",
                     "S|You cannot press Right Mouse Button",
                     "S|You cannot use your scroll wheel",
@@ -91,16 +91,9 @@ namespace Overlord_Warden {
                     "S|You must show off your knife for the next 15 seconds",
                     "S|If you have a doppelganger, killing them is your highest priority",
                     "V|0",
-                    "V|0",
-                    "V|0",
-                    "V|0",
-                    "V|15",
                     "V|15",
                     "V|100",
-                    "V|100",
                     $"W|{trollDir}",
-                    $"W|{trollDir}",
-                    @"W|https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     @"W|https://www.youtube.com/watch?v=dQw4w9WgXcQ",
                     "S|You must talk without your lips touching",
                     "S|You must buy and use the sheriff only",
@@ -127,10 +120,10 @@ namespace Overlord_Warden {
                     "S|Spectre only",
                     "S|Stinger only",
                     "S|You can only callout using real life place names",
-                    "S|Press right square bracket immediately",
+                    "S|Press right =",
                     "S|You must teabag the nearest corpse before continuing on with the game",
                     "S|Use your ult instantly, if you have it",
-                    "S|When the spike is planted, press right square bracket",
+                    "S|When the spike is planted, press =",
                     @"W|https://www.youtube.com/watch?v=0ynT_2DDBZg",
                     "S|Make your mouse sensitivity maximum",
                     "S|You may not reload your weapons",
@@ -138,12 +131,43 @@ namespace Overlord_Warden {
                     "S|Remain crouched at all times",
                     "S|You must whisper something weird to another player",
                     "S|The floor is lava",
-                    "S|You may not kill an enemy until an ally has died", 
+                    "S|You may not kill an enemy until an ally has died",
                     "S|You must kill the next enemy you see. You attack any other player until they are dead",
                     "S|After getting a kill, you must remain in place",
                     "S|Knife only",
                     "S|Pistol only",
                     "S|Reload has been disabled",
+                    "S|You're bad lol",
+                    @"W|https://www.youtube.com/watch?v=7rbgYh9fbkA",
+                    @"W|https://pbs.twimg.com/media/FDdpjdGXEAA98K5.jpg",
+                    @"W|C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+                    @"W|https://www.youtube.com/watch?v=_vBVGjFdwk4",
+                    "S|Throw all your abilities at a teammate",
+                    "S|You can only walk backwards",
+                    "S|Spend all your money",
+                    "S|Set your sensitivity to 0.01",
+                    "V|69",
+                    "V|42",
+                    "S|You cannot stop talking until the end of the round",
+                    "S|You cannot kill anyone other than their topfrag",
+                    "S|You are explicitly banned from using shotguns",
+                    "S|Pick one player - they are exempt from Warden's commands for one round",
+                    "S|Go to your school's hub",
+                    "S|Take a tour of the map",
+                    "S|Type AFK in chat",
+                    "S|Try to get a knife kill",
+                    "S|Hold team chat for the rest of the round",
+                    "S|Hold party chat for the rest of ther round",
+                    "S|Join the enemy team's discord call, if possible",
+                    "S|You must hold left for the rest of the round",
+                    "S|You must hold right for the rest of the round",
+                    "S|Rate everyone on the team in terms of looks",
+                    "S|Do 5 pushups",
+                    "S|Watch a youtube video",
+                    "S|Double the volume of any music or videos playing",
+                    "S|Jump into the spike explosion at the end of the round",
+                    "S|Unload your clip into the ground",
+                    "S|Call out an allie's position in all chat", 
                 });
             }
 
@@ -175,27 +199,29 @@ namespace Overlord_Warden {
         }
 
 
-        public void AsyncStart() {
-            SpeechRecognitionEngine recognizer = new SpeechRecognitionEngine(new System.Globalization.CultureInfo("en-UK"));
-            recognizer.LoadGrammar(new DictationGrammar());
-            recognizer.SetInputToDefaultAudioDevice();
-            recognizer.SpeechRecognized += new EventHandler<SpeechRecognizedEventArgs>(Recognizer_SpeechRecognized);
-            recognizer.RecognizeAsync(RecognizeMode.Multiple);
+        public void AsyncStart(bool internalCall = false) {
 
-
-            randomEventTimer.Interval = 6900;
-            randomEventTimer.Elapsed += RandomTimerEventHandler;
-            randomEventTimer.Start();
-
+            if (!internalCall) {
+                recognizer = new SpeechRecognitionEngine(new System.Globalization.CultureInfo("en-UK"));
+                recognizer.SpeechRecognized += new EventHandler<SpeechRecognizedEventArgs>(Recognizer_SpeechRecognized);
+                recognizer.LoadGrammar(new DictationGrammar());
+                recognizer.SetInputToDefaultAudioDevice();
+                randomEventTimer = new System.Timers.Timer();
+                randomEventTimer.Interval = 27000;
+                randomEventTimer.Elapsed += RandomTimerEventHandler;
+                randomEventTimer.Start();
+            }
+            recognizer.RecognizeAsync(RecognizeMode.Single);
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("Started");
+            Console.WriteLine("Started Listener");
 
 
             // Technically a keylogger lol
-            _ = Task.Run(() => {
-                if (!KeyInput) return;
-                KeyEventLogger();
-            });
+            if (!internalCall)
+                _ = Task.Run(() => {
+                    if (!KeyInput) return;
+                    KeyEventLogger();
+                });
         }
 
         private void KeyEventLogger() {
@@ -226,7 +252,7 @@ namespace Overlord_Warden {
             Console.WriteLine($"{(KeyPressLastGiven ? "\n" : "")}AFK Punished");
             KeyPressLastGiven = false;
 
-            int rnd = random.Next(0, 4);
+            int rnd = random.Next(0, 2);
             if (rnd == 0) punishments['W'](@"https://www.youtube.com/watch?v=f2bHoTUiMpI");
             else if (rnd == 1) {
                 punishments['V']("100");
@@ -250,8 +276,8 @@ namespace Overlord_Warden {
             if (random.Next(0, 75) == 0 && key == "[Control]") punishments['S']("You must only crouch");
             if (random.Next(0, 10) == 0 && key == "t") punishments['S']("You must spray the enemy spawn before killing anyone");
             if (key == "[Enter]") punishments['S']("Stop typing start playing");
-            if (random.Next(0, 25) == 0 && key == "[Caps Lock]") punishments['S']("You may not use the map for the rest of the game");
-            if (key == "]") RandomPunishment();
+            if (random.Next(0, 25) == 0 && key == "[Caps Lock]") punishments['S']("You may not use the map for the next 5 rounds");
+            if (key == "=") RandomPunishment();
             if (random.Next(0, 30) == 0 && key == "r") punishments['S']("Reload has been disabled");
             if (key == "[Down]") punishments['V']("100");
         }
@@ -272,7 +298,7 @@ namespace Overlord_Warden {
             Console.WriteLine($"{(KeyPressLastGiven ? "\n" : "")}\"{speech}\" -> P = {CanCommand}");
             KeyPressLastGiven = false;
 
-            //AsyncStart(true);
+            AsyncStart(true);
             if (!CanCommand) return;
 
             foreach (string key in commands.Keys) {
@@ -301,7 +327,10 @@ namespace Overlord_Warden {
         }
 
         private void RandomTimerEventHandler(object sender, System.Timers.ElapsedEventArgs e) {
-            if (random.Next(0, 6) == 0) {
+            Console.Title = DateTime.UtcNow.ToString();
+            Console.WriteLine($"{(KeyPressLastGiven ? "\n" : "")}Random timer event trigger");
+            KeyPressLastGiven = false;
+            if (random.Next(0, 3) == 0) {
                 RandomPunishment();
             }
         }
